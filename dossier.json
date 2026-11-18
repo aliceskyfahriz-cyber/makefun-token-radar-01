@@ -1,0 +1,96 @@
+{
+  "as_of": "2026-11-18T23:05:57Z",
+  "source": "DefiLlama https://api.llama.fi/protocols",
+  "generated_by": "main.ts (token-radar-01)",
+  "counts": {
+    "snapshot_protocols": 737,
+    "pre_token": 210,
+    "board_rows": 200,
+    "watchlist": 40,
+    "watchlist_covered": 40
+  },
+  "top_10": [
+    {
+      "rank": 1,
+      "slug": "base-bridge",
+      "name": "Base Bridge",
+      "category": "Canonical Bridge",
+      "tvl": 2718737077.834483,
+      "model_value_usd": 1894042747
+    },
+    {
+      "rank": 2,
+      "slug": "steakhouse-financial",
+      "name": "Steakhouse Financial",
+      "category": "Risk Curators",
+      "tvl": 2683975939.0978622,
+      "model_value_usd": 975197492
+    },
+    {
+      "rank": 3,
+      "slug": "sentora-curator",
+      "name": "Sentora Curator",
+      "category": "Risk Curators",
+      "tvl": 2669030645.4824057,
+      "model_value_usd": 778198307
+    },
+    {
+      "rank": 4,
+      "slug": "veda",
+      "name": "Veda",
+      "category": "Onchain Capital Allocator",
+      "tvl": 1458931845.5248792,
+      "model_value_usd": 452371869
+    },
+    {
+      "rank": 5,
+      "slug": "gauntlet",
+      "name": "Gauntlet",
+      "category": "Risk Curators",
+      "tvl": 1401345016.843436,
+      "model_value_usd": 420870139
+    },
+    {
+      "rank": 6,
+      "slug": "upshift",
+      "name": "Upshift",
+      "category": "Onchain Capital Allocator",
+      "tvl": 536927253.621831,
+      "model_value_usd": 283556553
+    },
+    {
+      "rank": 7,
+      "slug": "usdd",
+      "name": "USDD",
+      "category": "CDP",
+      "tvl": 981849659.1965282,
+      "model_value_usd": 253668213
+    },
+    {
+      "rank": 8,
+      "slug": "bitfi-basis",
+      "name": "BitFi Basis",
+      "category": "Basis Trading",
+      "tvl": 222400862.97902024,
+      "model_value_usd": 159427755
+    },
+    {
+      "rank": 9,
+      "slug": "tydro",
+      "name": "Tydro",
+      "category": "Lending",
+      "tvl": 406311638.1878605,
+      "model_value_usd": 151307257
+    },
+    {
+      "rank": 10,
+      "slug": "world-chain-bridge",
+      "name": "World Chain Bridge",
+      "category": "Canonical Bridge",
+      "tvl": 233452341.92881858,
+      "model_value_usd": 119237058
+    }
+  ],
+  "model_summary": "Implied value = max(TVL, $50M) x category multiple (median mcap/TVL of live protocols per category, DefiLlama public data 2026-11-19, fallback 0.279x, clamped 0.2x-10x) x momentum (TVL growth 1d/7d/30d, clamped 0.5x-2.0x) x chain diversity (1 + 0.05 per extra chain, cap 1.5x).",
+  "filter_summary": "Pre-token = gecko_id and symbol both empty; category not Bridge / Wrapped Token / Liquid Staking / Restaking; name has no version suffix and no whole word wrapped/staked/staking; name does not start with an exchange brand."
+}
