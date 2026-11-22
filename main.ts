@@ -12,9 +12,10 @@
 // Exit code 0 on success. No wall-clock time, no randomness, sorted
 // iteration everywhere, so two runs on the same input are byte-identical.
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildDossier } from "./vendor/makefun-board.ts";
 
 // ---------------------------------------------------------------------------
 // Model constants (derived from public DefiLlama data, 2026-11-19 — see
@@ -417,9 +418,9 @@ function boardJsonFor(rows: ScoredProtocol[]): Record<string, unknown>[] {
     category_multiple: r.multiple,
     momentum: +r.momentum.toFixed(4),
     diversity: +r.diversity.toFixed(4),
-    model_value_usd: Math.round(r.modelValue),
+    implied_value_usd: Math.round(r.modelValue),
     watchlist: r.watchlist,
-    farm_plan: r.farmPlan,
+    farm_steps: r.farmPlan,
   }));
 }
 
@@ -608,7 +609,6 @@ function main(): void {
     board.sort((a, b) => b.modelValue - a.modelValue || (a.slug < b.slug ? -1 : 1));
   }
 
-  const html = buildHtml(snap.asOf, snap.source, board, snap.protocols.length, preToken.length);
   const boardJson = {
     as_of: snap.asOf,
     source: snap.source,
@@ -617,7 +617,7 @@ function main(): void {
     watchlist_size: WATCHLIST_SIZE,
     watchlist_covered: board.filter((r) => r.watchlist).length,
     model: {
-      formula: "model_value_usd = max(tvl, 50000000) * category_multiple * momentum * diversity",
+      formula: "implied_value_usd = max(tvl, 50000000) * category_multiple * momentum * diversity",
       floor_tvl_usd: FLOOR_TVL_USD,
       fallback_multiple: FALLBACK_MULTIPLE,
       category_multiples: CATEGORY_MULTIPLES,
@@ -626,49 +626,34 @@ function main(): void {
     },
     rows: boardJsonFor(board),
   };
-  const dossier = {
-    as_of: snap.asOf,
-    source: snap.source,
-    generated_by: "main.ts (token-radar-01)",
-    counts: {
-      snapshot_protocols: snap.protocols.length,
-      pre_token: preToken.length,
-      board_rows: board.length,
-      watchlist: WATCHLIST_SIZE,
-      watchlist_covered: board.filter((r) => r.watchlist).length,
-    },
-    top_10: board.slice(0, 10).map((r, i) => ({
-      rank: i + 1,
-      slug: r.slug,
-      name: r.name,
-      category: r.category,
-      tvl: r.tvl,
-      model_value_usd: Math.round(r.modelValue),
-    })),
-    model_summary:
-      "Implied value = max(TVL, $50M) x category multiple (median mcap/TVL of live " +
-      "protocols per category, DefiLlama public data 2026-11-19, fallback 0.279x, clamped 0.2x-10x) " +
-      "x momentum (TVL growth 1d/7d/30d, clamped 0.5x-2.0x) x chain diversity (1 + 0.05 per extra chain, cap 1.5x).",
-    filter_summary:
-      "Pre-token = gecko_id and symbol both empty; category not Bridge / Wrapped Token / " +
-      "Liquid Staking / Restaking; name has no version suffix and no whole word wrapped/staked/staking; " +
-      "name does not start with an exchange brand.",
+  mkdirSync(outputDir, { recursive: true });
+  writeFileSync(join(outputDir, "board.json"), JSON.stringify(boardJson) + "\n", "utf8");
+  writeFileSync(join(outputDir, "data.js"), "window.TOKEN_RADAR = " + JSON.stringify({ as_of: snap.asOf, rows: boardJson.rows }) + ";\n", "utf8");
+
+  // Copy one directory's regular files into `to`, skipping names that start with a dot.
+  const copyFiles = (from: string, to: string): string[] => {
+    if (!existsSync(from)) return [];
+    mkdirSync(to, { recursive: true });
+    const copied: string[] = [];
+    for (const name of readdirSync(from)) {
+      if (name.startsWith(".")) continue;
+      const path = join(from, name);
+      if (!statSync(path).isFile()) continue;
+      copyFileSync(path, join(to, name));
+      copied.push(name);
+    }
+    return copied;
   };
 
-  mkdirSync(outputDir, { recursive: true });
-  writeFileSync(join(outputDir, "index.html"), html, "utf8");
-  writeFileSync(join(outputDir, "board.json"), JSON.stringify(boardJson) + "\n", "utf8");
-  writeFileSync(join(outputDir, "dossier.json"), JSON.stringify(dossier, null, 2) + "\n", "utf8");
-
-  const dashboardDir = join(botDir, "dashboard");
-  for (const name of ["board.png", "detail.png", "filtered.png"]) {
-    const src = join(dashboardDir, name);
-    if (existsSync(src)) {
-      copyFileSync(src, join(outputDir, name));
-    } else {
-      console.error("warning: screenshot not found, skipped: " + src);
-    }
+  copyFiles(join(botDir, "dashboard"), join(outputDir, "dashboard"));
+  const shots = copyFiles(join(botDir, "screenshots"), join(outputDir, "screenshots"));
+  if (shots.length < 3) {
+    console.error("token radar: screenshots/ holds " + shots.length + " image" + (shots.length === 1 ? "" : "s") + ": hand in 3, the board, a detail view and a filtered view");
+    process.exit(1);
   }
+
+  // The dossier is written last: the scorer rebuilds it from this output and compares bytes.
+  writeFileSync(join(outputDir, "dossier.json"), buildDossier(outputDir, { text_max_bytes: 65536, screenshots: { max: 4, max_bytes: 524288 }, dashboard: { max_files: 400, max_bytes: 4194304 } }));
 
   console.log(
     "token-radar: snapshot=" + snap.protocols.length +
