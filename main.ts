@@ -657,7 +657,7 @@ function main(): void {
 
   mkdirSync(outputDir, { recursive: true });
   writeFileSync(join(outputDir, "index.html"), html, "utf8");
-  writeFileSync(join(outputDir, "board.json"), JSON.stringify(boardJson, null, 2) + "\n", "utf8");
+  writeFileSync(join(outputDir, "board.json"), JSON.stringify(boardJson) + "\n", "utf8");
   writeFileSync(join(outputDir, "dossier.json"), JSON.stringify(dossier, null, 2) + "\n", "utf8");
 
   const dashboardDir = join(botDir, "dashboard");
